@@ -1,46 +1,49 @@
-# Radice
-Interfaccia educativa responsive in HTML5, CSS3 e JavaScript ES modules, senza framework o build.
+# Radice · Il tuo modo di imparare
 
-## Avvio
-Dalla cartella del repository:
+Piattaforma educativa con tre percorsi (Studenti, Dislessia/DSA e Mantenimento cognitivo), strumenti di studio, lezioni individuali e crediti.
+
+- **Frontend:** HTML5, CSS3 e JavaScript modulare senza framework, layout responsive e lettura facilitata.
+- **Backend:** Node.js/TypeScript, Fastify, PostgreSQL, Redis, worker asincrono, SMTP, Zoom, S3 e Stripe.
+- **Amministrazione:** backoffice per utenti, ruoli, recupero password, rettifiche crediti e consensi legali.
+
+## Prova della demo statica
+
+Dalla radice del repository:
+
 ```sh
-python3 -m http.server 8000 --bind 0.0.0.0
+python3 -m http.server 8000
 ```
-Aprire il sito tramite un server HTTP (i moduli non funzionano con `file://`).
 
-## Architettura
-- `index.html`: sezioni, form semantici e dialog.
-- `styles.css`: design responsive, focus, riduzione movimento, lettura facilitata.
-- `js/app.js`: interazioni e rendering; input testuali escapati.
-- `js/api.js`: unico punto di accesso REST; adapter demo con persistenza locale.
-- `js/utils.js`: date di calendario, età e compressione locale immagini ≤150 KiB.
+La demo usa dati locali al browser, 24 crediti iniziali, una call e OTP **123456**. Non invia email e non addebita denaro. I video reali non sono inclusi. L’illustrazione è locale; non sono necessari servizi grafici esterni.
 
-La demo parte con 24 crediti e una call. OTP demo: **123456** (scadenza 10 minuti, massimo 5 tentativi). Nessuna email o transazione reale. I dati personali di registrazione non sono persistiti. Illustrazione SVG locale originale e font di sistema come fallback: nessuna risorsa esterna richiesta. I video didattici e le registrazioni reali devono essere forniti dal backend; la UI comunica esplicitamente la loro assenza. Le immagini non supportate dal decoder del browser vengono rifiutate; input massimo 25 MiB. Canvas rimuove i metadati, scala e codifica WebP/JPEG, verificando la dimensione prima del caricamento.
+**GitHub Pages pubblica questa versione dimostrativa. Non esegue il backend.**
 
-## Collegamento REST
-Prima dello script module, impostare:
-```html
-<script>window.RADICE_CONFIG = { demo: false, baseUrl: '/api/v1', csrfToken: 'TOKEN_FORNITO_DAL_SERVER' };</script>
+## Piattaforma completa
+
+Con Node.js 24 e Docker Compose:
+
+```sh
+node backend/scripts/init-env.mjs
+docker compose -f backend/compose.yaml up --build -d
 ```
-Usare cookie HttpOnly/Secure/SameSite, HTTPS e protezione CSRF server-side. `api.js` gestisce errori HTTP, JSON, multipart e timeout. Il server deve applicare autorizzazioni e consenso del tutore, validazione dei dati (compreso codice fiscale), invio OTP con rate limiting/scadenza, disponibilità tutor, proprietà dei video e operazioni atomiche/idempotenti sui crediti. Il frontend non è un confine di sicurezza. Autenticazione, pagamento, videochiamata e registrazione automatica richiedono servizi backend; questa implementazione ne fornisce l’interfaccia.
 
-Contratti attesi (JSON salvo multipart):
-| Metodo / endpoint | Dati / risposta |
+Il backend serve anche il frontend in modalità reale sulla porta **3000**, l’accesso su **/account** e l’amministrazione su **/admin**. Le email locali sono visibili in Mailpit, porta **8025**. L’OTP reale è casuale; non esistono utenti/password predefiniti.
+
+Segui la [guida backend passo per passo](backend/README.md) per creare il primo admin, configurare tutor e Zoom, eseguire test e fare deploy su Render/Railway. Non caricare `.env` o credenziali su GitHub.
+
+## Struttura
+
+| Percorso | Contenuto |
 | --- | --- |
-| GET /me/dashboard | `{balance,reviews,associations,bookings,unlocked,purchases,calls}` |
-| POST /reviews | `{subject,topic,date}` → `{id,subject,topic,date,done:[false,false,false,false]}` |
-| PATCH /reviews/:id/steps/:index | `{done:boolean}` |
-| POST /associations | FormData `number`, `word`, `image` compressa opzionale |
-| GET /availability?tutor=…&date=… | Array stringhe `HH:mm`, fuso Europe/Rome |
-| POST /bookings | `{tutor,date,time,timezone,recordingConsent}`; verifica diritto call e consenso |
-| GET /recordings | `[{id,title,tutor,date,unlocked,videoUrl}]`; URL firmato solo se autorizzato |
-| POST /recordings/:id/unlock | Addebito atomico 3 crediti, idempotente → `{videoUrl}` |
-| POST /orders | `{product:'single'|'bundle',topic}`; prezzi server 8/15 crediti |
-| POST /checkout | `{credits:15|30|50|100}` → `{checkoutUrl}` HTTPS; saldo aggiornato solo da webhook verificato |
-| POST /registrations | Dati studente, eventuali dati tutore, `isMinor`, `parentConsent`, `consentText` → `{registrationId,requiresOtp}` |
-| POST /registrations/:id/verify-parent | `{code}`; account minore attivato solo dopo verifica server |
-| GET /lessons/introduction | `{videoUrl}` |
+| `index.html`, `styles.css` | Interfaccia e design responsive |
+| `js/app.js`, `js/api.js`, `js/utils.js` | Interazioni, adapter demo/REST, date e compressione immagini |
+| `assets/` | Illustrazione SVG locale |
+| `backend/src/` | API, autenticazione, transazioni, servizi e worker |
+| `backend/migrations/` | Schema PostgreSQL e vincoli di integrità |
+| `backend/public/` | Account e backoffice |
+| `backend/test/` | Test d’integrazione su PostgreSQL, Redis e S3 locale |
+| `.github/workflows/backend.yml` | Verifica automatica predisposta per GitHub Actions |
 
-Date ripassi: +1, +7, +30, +90 giorni di calendario, senza sommare millisecondi (corretto attraverso cambi d’ora). Disponibilità demo simulata; stato condiviso fra dispositivi solo con backend.
+[Architettura e schema dati](backend/ARCHITECTURE.md) · [API, sicurezza e deploy](backend/README.md)
 
-Prima del rilascio sostituire prezzi demo e informativa provvisoria con testi approvati, fornire contenuti video accessibili (sottotitoli e trascrizioni), integrare autenticazione, tutela minori, provider call/registrazione e checkout. I contenuti di mantenimento cognitivo sono educativi, non clinici.
+La configurazione Zoom, i pagamenti, lo storage e l’email di produzione richiedono servizi e credenziali reali. Prima dell’apertura al pubblico completare il collaudo con i provider, caricare i contenuti video e approvare informativa, condizioni e retention dei dati.

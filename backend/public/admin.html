@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="it">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Amministrazione · Radice</title>
+    <link rel="stylesheet" href="/backoffice.css" />
+    <script type="module" src="/admin.js"></script>
+  </head>
+  <body>
+    <header>
+      <strong>✳ Radice · Amministrazione</strong><a href="/">Piattaforma</a
+      ><a href="/account">Account e accesso</a>
+    </header>
+    <main>
+      <h1>Gestisci le persone, con semplicità.</h1>
+      <p>
+        Modifiche ai crediti, accesso ai consensi e operazioni amministrative
+        vengono registrati nello storico.
+      </p>
+      <div id="message" role="status" aria-live="polite"></div>
+      <section id="content" hidden>
+        <form id="search" class="row">
+          <label
+            >Cerca per inizio email o cognome<input
+              name="search"
+              placeholder="Es. rossi"
+              maxlength="100" /></label
+          ><button>Cerca</button>
+        </form>
+        <div class="panel scroll">
+          <table>
+            <thead>
+              <tr>
+                <th>Persona</th>
+                <th>Ruolo</th>
+                <th>Crediti</th>
+                <th>Stato</th>
+                <th>Gestione</th>
+              </tr>
+            </thead>
+            <tbody id="users"></tbody>
+          </table>
+          <button id="next" class="secondary">Pagina successiva</button>
+        </div>
+        <h2>Operazioni che richiedono attenzione</h2>
+        <button id="refresh-ops" class="secondary">
+          Aggiorna stato servizi
+        </button>
+        <div id="operations"></div>
+      </section>
+    </main>
+    <dialog id="details">
+      <button class="close" aria-label="Chiudi">×</button>
+      <div id="detail-content"></div>
+    </dialog>
+  </body>
+</html>

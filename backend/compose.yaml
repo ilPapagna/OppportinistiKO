@@ -1,0 +1,100 @@
+name: radice
+x-env: &environment
+  NODE_ENV: development
+  DATABASE_URL: postgresql://radice:${POSTGRES_PASSWORD:?Run init-env first}@postgres:5432/radice
+  REDIS_URL: redis://redis:6379
+  APP_ORIGIN: ${APP_ORIGIN:-http://localhost:3000}
+  COOKIE_SECURE: 'false'
+  DATA_KEY: ${DATA_KEY:?Run init-env first}
+  OTP_PEPPER: ${OTP_PEPPER:?Run init-env first}
+  SMTP_HOST: mailpit
+  SMTP_PORT: 1025
+  SMTP_SECURE: 'false'
+  S3_BUCKET: radice-private
+  S3_REGION: eu-west-1
+  S3_ENDPOINT: http://s3:4566
+  S3_PUBLIC_ENDPOINT: http://localhost:9000
+  S3_ACCESS_KEY: ${S3_ACCESS_KEY}
+  S3_SECRET_KEY: ${S3_SECRET_KEY}
+  S3_FORCE_PATH_STYLE: 'true'
+  ZOOM_ACCOUNT_ID: ${ZOOM_ACCOUNT_ID:-}
+  ZOOM_CLIENT_ID: ${ZOOM_CLIENT_ID:-}
+  ZOOM_CLIENT_SECRET: ${ZOOM_CLIENT_SECRET:-}
+  ZOOM_WEBHOOK_SECRET: ${ZOOM_WEBHOOK_SECRET:-}
+  STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY:-}
+  STRIPE_WEBHOOK_SECRET: ${STRIPE_WEBHOOK_SECRET:-}
+services:
+  postgres:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_USER: radice
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: radice
+    ports: ['127.0.0.1:5432:5432']
+    volumes: [pgdata:/var/lib/postgresql/data]
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U radice -d radice']
+      interval: 3s
+      timeout: 3s
+      retries: 20
+  redis:
+    image: redis:7.4-alpine
+    command: ['redis-server', '--appendonly', 'yes', '--maxmemory-policy', 'noeviction']
+    ports: ['127.0.0.1:6379:6379']
+    volumes: [redisdata:/data]
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 3s
+      timeout: 3s
+      retries: 20
+  s3:
+    image: localstack/localstack:4.9.2
+    environment:
+      SERVICES: s3
+      AWS_DEFAULT_REGION: eu-west-1
+      AWS_ACCESS_KEY_ID: ${S3_ACCESS_KEY}
+      AWS_SECRET_ACCESS_KEY: ${S3_SECRET_KEY}
+    ports: ['127.0.0.1:9000:4566']
+    volumes:
+      - ./scripts/init-s3.sh:/etc/localstack/init/ready.d/10-bucket.sh:ro
+    healthcheck:
+      test: ['CMD-SHELL', 'awslocal s3api head-bucket --bucket radice-private']
+      interval: 5s
+      timeout: 5s
+      retries: 30
+  mailpit:
+    image: axllent/mailpit:v1.27.0
+    ports: ['127.0.0.1:8025:8025', '127.0.0.1:1025:1025']
+  migrate:
+    image: radice-backend:local
+    build: {context: .., dockerfile: backend/Dockerfile}
+    environment: *environment
+    command: ['node','dist/migrate.js']
+    depends_on:
+      postgres: {condition: service_healthy}
+  api:
+    image: radice-backend:local
+    build: {context: .., dockerfile: backend/Dockerfile}
+    environment: *environment
+    ports: ['127.0.0.1:3000:3000']
+    depends_on:
+      migrate: {condition: service_completed_successfully}
+      redis: {condition: service_healthy}
+      s3: {condition: service_healthy}
+    healthcheck:
+      test: ['CMD','node','-e',"fetch('http://localhost:3000/health/ready').then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+  worker:
+    image: radice-backend:local
+    build: {context: .., dockerfile: backend/Dockerfile}
+    environment: *environment
+    command: ['node','dist/worker.js']
+    depends_on:
+      migrate: {condition: service_completed_successfully}
+      s3: {condition: service_healthy}
+      mailpit: {condition: service_started}
+volumes:
+  pgdata:
+  redisdata:

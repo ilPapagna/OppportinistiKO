@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="it">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Account · Radice</title>
+    <link rel="stylesheet" href="/backoffice.css" />
+    <script type="module" src="/account.js"></script>
+  </head>
+  <body>
+    <header>
+      <strong>✳ Radice</strong><a href="/">Torna alla piattaforma</a
+      ><a href="/admin">Amministrazione</a>
+    </header>
+    <main class="auth">
+      <h1>Il tuo spazio personale</h1>
+      <div id="message" role="status" aria-live="polite"></div>
+      <section id="logged" hidden class="panel">
+        <p id="identity"></p>
+        <a class="button" href="/">Vai allo spazio studio</a
+        ><button id="logout">Esci</button
+        ><button id="request-consent" class="secondary">
+          Verifica consenso genitore
+        </button>
+      </section>
+      <section id="anonymous">
+        <nav>
+          <button data-view="login">Accedi</button
+          ><button data-view="forgot">Password dimenticata</button
+          ><button data-view="verify">Reinvia verifica email</button>
+        </nav>
+        <form id="login" class="panel">
+          <h2>Accedi</h2>
+          <label
+            >Email<input
+              name="email"
+              type="email"
+              required
+              autocomplete="username" /></label
+          ><label
+            >Password<input
+              name="password"
+              type="password"
+              required
+              maxlength="128"
+              autocomplete="current-password" /></label
+          ><button>Entra</button>
+          <p>
+            Nuovo qui? <a href="/#home">Crea un account dalla piattaforma</a>.
+          </p>
+        </form>
+        <form id="forgot" class="panel" hidden>
+          <h2>Recupera l’accesso</h2>
+          <label
+            >Email<input
+              name="email"
+              type="email"
+              required
+              autocomplete="email" /></label
+          ><button>Invia link di recupero</button>
+        </form>
+        <form id="verify" class="panel" hidden>
+          <h2>Verifica la tua email</h2>
+          <label
+            >Email<input
+              name="email"
+              type="email"
+              required
+              autocomplete="email" /></label
+          ><button>Invia nuovo link</button>
+        </form>
+      </section>
+      <form id="reset" class="panel" hidden>
+        <h2>Scegli una nuova password</h2>
+        <label
+          >Password (almeno 12 caratteri)<input
+            name="password"
+            type="password"
+            minlength="12"
+            maxlength="128"
+            required
+            autocomplete="new-password" /></label
+        ><button>Salva password</button>
+      </form>
+      <section id="verify-link" class="panel" hidden>
+        <h2>Conferma la tua email</h2>
+        <button id="confirm-email">Conferma indirizzo email</button>
+      </section>
+      <form id="guardian" class="panel" hidden>
+        <h2>Consenso del tutore</h2>
+        <label>Nome<input name="firstName" required maxlength="80" /></label
+        ><label>Cognome<input name="lastName" required maxlength="80" /></label
+        ><label
+          >Email genitore<input name="email" type="email" required /></label
+        ><label
+          >Codice fiscale<input
+            name="taxCode"
+            required
+            minlength="16"
+            maxlength="16" /></label
+        ><label class="check"
+          ><input type="checkbox" required /><span
+            id="legal-text"
+          ></span></label
+        ><button>Invia codice al genitore</button>
+      </form>
+      <form id="otp" class="panel" hidden>
+        <h2>Verifica il consenso</h2>
+        <label
+          >Codice ricevuto dal genitore<input
+            name="code"
+            pattern="[0-9]{6}"
+            maxlength="6"
+            inputmode="numeric"
+            autocomplete="one-time-code"
+            required /></label
+        ><button>Verifica codice</button>
+      </form>
+    </main>
+    <footer>Le password e i codici non vengono conservati nel browser.</footer>
+  </body>
+</html>
